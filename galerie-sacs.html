@@ -199,6 +199,19 @@
       .gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
       .lightbox-nav { display: none; }
     }
+    
+    .gallery-item-title {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(196, 53, 106, 0.88);
+  color: white;
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-align: center;
+  padding: 0.5rem 0.8rem;
+  font-family: 'Jost', sans-serif;
+}
   </style>
 </head>
 <body>
@@ -238,15 +251,21 @@ let allImages = [];
 let currentIndex = 0;
 
 async function loadFolder(folder) {
-  try {
-    const res = await fetch(folder + '/liste.json');
-    if (!res.ok) return [];
-    const files = await res.json();
-    return files.map(f => ({ src: folder + '/' + f, folder }));
-  } catch(e) {
-    return [];
-  }
-}
+	  try {
+	    const res = await fetch(folder + '/liste.json');
+	    if (!res.ok) return [];
+	    const data = await res.json();
+	    return data.map(item => {
+	      // Compatible ancien format (simple string) et nouveau format (objet)
+	      if (typeof item === 'string') {
+	        return { src: folder + '/' + item, titre: '' };
+	      }
+	      return { src: folder + '/' + item.fichier, titre: item.titre || '' };
+	    });
+	  } catch(e) {
+	    return [];
+	  }
+	}
 
 async function init() {
   const root = document.getElementById('gallery-root');
@@ -279,10 +298,11 @@ async function init() {
         const item = document.createElement('div');
         item.className = 'gallery-item';
         item.innerHTML = `
-          <img src="${img.src}" alt="Création — ${label}" loading="lazy">
-          <div class="gallery-item-overlay">
-            <span class="gallery-item-label">${label}</span>
-          </div>`;
+        	  <img src="${img.src}" alt="${img.titre || label}" loading="lazy">
+        	  <div class="gallery-item-overlay">
+        	    <span class="gallery-item-label">${img.titre || label}</span>
+        	  </div>
+        	  ${img.titre ? `<div class="gallery-item-title">${img.titre}</div>` : ''}`;
         item.addEventListener('click', () => openLightbox(globalIndex));
         grid.appendChild(item);
       });
